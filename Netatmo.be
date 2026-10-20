@@ -111,8 +111,32 @@ class Netatmo
       var m = re.search("^ *([^:]*[^: ]) *(: *([^ ]*))? *(short|medium|long)?", item)
       if m != nil
         var ic = m[3] == "" ? nil : m[3]
+        var g = icons.find(ic == nil ? "room" : ic, icons["room"])
+        # A picture in the middle of the 16×16 square by the pixels it lights, not by its 8×8 frame.
+        var ox = 0
+        var oy = 0
+        if type(g[0]) == "int"
+          var x0 = 8
+          var x1 = -1
+          var y0 = 8
+          var y1 = -1
+          for f : 1 .. size(g) - 1
+            for p : 0 .. 63
+              if g[f][p * 3] | g[f][p * 3 + 1] | g[f][p * 3 + 2]
+                x0 = min(x0, p & 7)
+                x1 = max(x1, p & 7)
+                y0 = min(y0, p >> 3)
+                y1 = max(y1, p >> 3)
+              end
+            end
+          end
+          if x1 >= 0
+            ox = (16 - 2 * (x1 - x0 + 1)) / 2 - 2 * x0
+            oy = (16 - 2 * (y1 - y0 + 1)) / 2 - 2 * y0
+          end
+        end
         # A name not built in is an icon installed from the AWTRIX Hub.
-        self.rooms.push({"module": m[1], "icon": icons.find(ic == nil ? "room" : ic, icons["room"]),
+        self.rooms.push({"module": m[1], "icon": g, "ox": ox, "oy": oy,
                          "hub": ic != nil && icons.find(ic) == nil ? ic : nil,
                          "ms": short * (m[4] == nil ? 1 : times[m[4]]),
                          "temp": nil, "hum": nil, "co2": nil, "co2tint": self.fg,
@@ -365,7 +389,7 @@ class Netatmo
       var p = 0
       while p < 64
         var c = (b[p * 3] << 16) | (b[p * 3 + 1] << 8) | b[p * 3 + 2]
-        if c != 0 rect_fill((p & 7) * 2, dy + (p >> 3) * 2, 2, 2, c) end
+        if c != 0 rect_fill(r["ox"] + (p & 7) * 2, dy + r["oy"] + (p >> 3) * 2, 2, 2, c) end
         p += 1
       end
     elif g != nil
