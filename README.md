@@ -94,7 +94,14 @@ python3 install-icons.py <tc001-ip>
 
 Saving a new version of the script on a TC001 can restart the clock and
 leave the old one in place: it has too little memory for both. Then delete
-the app, install the script again, and paste the token back in.
+the app, restart the clock, install the script again, and paste the token
+back in.
+
+A TC001 has room for this app, but hardly for another script beside it: the
+connection to Netatmo needs a large piece of memory, and with a second script
+such as ShotTimer running it fails, which the log shows as `no answer
+renewing the token (0)`. A disabled script still takes its memory until it
+is deleted and the clock restarted.
 
 ## Settings
 
