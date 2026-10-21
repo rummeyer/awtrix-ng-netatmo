@@ -79,7 +79,7 @@ On the clock's **Apps** tab, press the gear button on the `Netatmo` row and
 paste **Client ID**, **Client secret** and the **Refresh token** into the
 **Token** block. The app renews the token by itself and keeps the new
 refresh token there, so it only needs doing once. If it ever stops working,
-the clock says the token was refused: generate a new one. The secret and the
+the log says the token was refused: generate a new one. The secret and the
 token are readable to anyone who can open the clock's web UI or a config
 backup.
 
@@ -141,6 +141,11 @@ cannot be found, gets a thermometer.
 **Temperature** in the colour of its comfort zone, **humidity** in blue
 beside it, **CO2** under them in green, yellow or red. Temperatures follow
 the clock's °C/°F setting.
+
+**Until the station first answers**, as just after a restart, the app sits
+out its turn. When Netatmo is not reached, or the token is refused, the
+pages keep the last readings and a **red dot** in the lower right corner
+says so, until an answer comes again; the log has the details.
 
 **The curve** is the room's CO2 of the last 24 hours, an hour per few
 columns, with the latest at the right, in the green, yellow and red of the
