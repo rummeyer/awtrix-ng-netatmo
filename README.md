@@ -41,7 +41,10 @@ Without it, signing in fails with `invalid_client`, the same answer as for a
 wrong client secret. Keep the page with the **Client ID** and **Client
 Secret** open.
 
-**The script.** In the clock's web UI, opened by its IP address or local
+**The script.** On a TC002, from the AWTRIX Hub: open
+[Netatmo on the Hub](https://awtrix.de/script/LVDogUoTjVxc), sign in, and
+press **Send to AWTRIX**. The clock's web UI then offers each new version as
+an update. Or by hand: in the clock's web UI, opened by its IP address or local
 name, go to **Scripts**, create a script named `Netatmo`, paste in
 [`Netatmo.be`](Netatmo.be) and save. Or from a computer on the same network:
 
