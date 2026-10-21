@@ -62,8 +62,10 @@ and asks for `read_station` only, so it can read the station and nothing
 else.
 
 **On a TC001.** Its firmware has no sign-in for scripts, so the app signs in
-with a token instead. Install the script without its `@oauth` line, which
-the TC001 cannot use and which would mark the app as not fitting the clock:
+with a token instead. [Netatmo on the Hub](https://awtrix.de/script/LVDogUoTjVxc)
+sends a TC001 a version of the script without its `@oauth` line, which the
+TC001 cannot use and which would mark the app as not fitting the clock. By
+hand, leave the line out yourself:
 
 ```sh
 sed '/^# @oauth /d' Netatmo.be | curl -X PUT "http://<tc001-ip>/api/v1/apps/script/Netatmo" \
