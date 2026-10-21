@@ -79,10 +79,15 @@ token are readable to anyone who can open the clock's web UI or a config
 backup.
 
 The TC001 cannot draw pictures from a web address, so its icons have to be
-on the clock, named by their number. Download each one from
-`https://developer.lametric.com/content/apps/icon_thumbs/<number>`, save it
-as `<number>.png`, and drop it on **Icons › Add** in the clock's web UI,
-which turns it into a GIF.
+on the clock, named by their number. [`install-icons.py`](install-icons.py)
+puts them there: it reads the rooms from the app's settings and installs
+every icon number the clock does not have yet, a still PNG turned into a GIF.
+It needs Python 3 and nothing else, leaves installed icons alone and skips a
+TC002, so it can run after every change of the rooms, or from cron:
+
+```sh
+python3 install-icons.py <tc001-ip>
+```
 
 Saving a new version of the script on a TC001 can restart the clock and
 leave the old one in place: it has too little memory for both. Then delete
