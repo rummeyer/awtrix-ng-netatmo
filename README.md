@@ -1,4 +1,4 @@
-# netatmo-awtrix-ng
+# awtrix-ng-netatmo
 
 A Netatmo Weather Station on an [AWTRIX NG](https://github.com/Blueforcer/awtrix-ng)
 Ulanzi TC002 or TC001, in place of the LaMetric Time's Netatmo Weather app: a page per
