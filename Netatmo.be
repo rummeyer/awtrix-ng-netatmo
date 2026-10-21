@@ -12,6 +12,9 @@
 # @config  clow    number "Comfortable from" default=800 min=400 max=5000 step=50 unit=ppm group="CO2"
 # @config  chigh   number "Comfortable to" default=1500 min=400 max=5000 step=50 unit=ppm group="CO2"
 # @config  alert   select "Notify when uncomfortable" default=off options=off,silent,sound,voice
+# @config  quiet   bool   "Quiet hours"    default=false group="Quiet hours" help="Left out of the rotation between these hours; the readings keep coming"
+# @config  qfrom   number "From"           default=23 min=0 max=23 unit=h group="Quiet hours"
+# @config  qto     number "To"             default=8 min=0 max=23 unit=h group="Quiet hours"
 # @config  tclient text   "Client ID"      default="" group="Token, on a clock without sign-in (TC001)" help="Of your app at dev.netatmo.com"
 # @config  tsecret text   "Client secret"  default="" group="Token, on a clock without sign-in (TC001)"
 # @config  trefresh text  "Refresh token"  default="" group="Token, on a clock without sign-in (TC001)" help="From the Token generator of your app, scope read_station; the app renews it and keeps the new one here"
@@ -29,7 +32,7 @@ import json
 # or with a token from the settings that the app renews, as on the TC001. A
 # room not heard from is left out.
 class Netatmo
-  var rooms, live, fg, t0, signed, ticks, busy, chart, missing, st, thermo, x0, answered, oa, access, expires, failed
+  var rooms, live, fg, t0, signed, ticks, busy, chart, missing, st, thermo, x0, answered, oa, access, expires, failed, renewing
 
   def init()
     self.fg = settings.get("textColor")
@@ -102,6 +105,7 @@ class Netatmo
       self.ticks = int(store.get("every")) * 60
       self.busy = self.get("https://api.netatmo.com/api/getstationsdata?get_favorites=false",
                             / b, s -> self.on_stations(b, s), {'cap': 65536})
+      if !self.busy self.ticks = 5 end           # waiting for the token: again in a moment
       return
     end
     if !self.chart || epoch_ms() < 0 return end
@@ -113,6 +117,7 @@ class Netatmo
                   "&date_begin=" + str(epoch_ms() / 1000 - 86400)
         if r["id"] != nil url += "&module_id=" + string.replace(r["id"], ":", "%3A") end
         self.busy = self.get(url, / b, s -> self.on_chart(r, b, s), {'cap': 16384})
+        if !self.busy r["chartAt"] = nil end
         return
       end
     end
@@ -127,9 +132,12 @@ class Netatmo
   # A GET to Netatmo: through the clock's sign-in, or with the token, renewed first when it is about
   # to run out or was refused.
   def get(url, cb, opts)
-    if self.oa != nil return self.oa.get(url, cb, opts) end
+    if self.oa != nil return self.oa.get(url, cb, opts) != false end
     if self.access == nil || now_ms() > self.expires
+      if self.renewing return false end                  # one renewal at a time
+      self.renewing = true
       self.renew(def (ok)
+        self.renewing = false
         if ok self.fetch(url, cb, opts) else cb(nil, 401) end
       end)
     else
@@ -161,10 +169,14 @@ class Netatmo
         if self.failed log("Netatmo: token renewed") end
         self.failed = false
         done(true)
-      else
+      elif s == 400 || s == 401 || s == 403
         # Said once, until it works again
         if !self.failed log("Netatmo: the token was refused (" + str(s) + "); make a new one at dev.netatmo.com") end
         self.failed = true
+        done(false)
+      else
+        # No answer, as without Wi-Fi or memory for the connection: the token is still good.
+        log("Netatmo: no answer renewing the token (" + str(s) + "); trying again")
         done(false)
       end
     end, {"headers": {"Content-Type": "application/x-www-form-urlencoded"}})
@@ -191,25 +203,40 @@ class Netatmo
       self.ticks = 60                          # again in a minute
       return
     end
-    var j = json.load(body)
-    var devices = j == nil ? nil : j.find("body", {}).find("devices")
-    if devices == nil return end
+    if string.find(body, '"devices"') < 0 return end
     self.answered = true
     for r : self.rooms r["seen"] = false end
     var names = []
-    for d : devices
-      var mods = [d]
-      for m : d.find("modules", []) mods.push(m) end
-      for m : mods
-        names.push(m.find("module_name", "?"))
-        var data = m.find("dashboard_data")
-        for r : self.rooms
-          if r["module"] != m.find("module_name") || data == nil || data.find("Temperature") == nil continue end
-          r["device"] = d.find("_id")
-          r["id"] = m.find("type") == "NAMain" ? nil : m.find("_id")
-          r["seen"] = true
-          self.reading(r, data, m.find("type") == "NAModule1")
-        end
+    # Taken out of the answer's text module by module rather than with json.load(), whose whole
+    # tree a clock with little memory, as the TC001, cannot spare. A module's part runs from its
+    # "_id" to the next one's: a station first, then its modules.
+    var device = nil
+    var at = string.find(body, '"_id":"')
+    while at >= 0
+      var next = string.find(body, '"_id":"', at + 7)
+      var part = body[at .. (next < 0 ? size(body) : next) - 1]
+      at = next
+      var id = re.search('^"_id":"([^"]*)"', part)
+      var kind = re.search('"type":"([A-Za-z0-9]*)"', part)
+      var name = re.search('"module_name":"([^"]*)"', part)
+      if id == nil || kind == nil || name == nil continue end
+      if kind[1] == "NAMain" device = id[1] end
+      var mod = name[1]
+      if string.find(mod, "\\") >= 0 mod = json.load('"' + mod + '"') end     # \u00fc and the like
+      names.push(mod)
+      var t = re.search('"Temperature":(-?[0-9.]+)', part)
+      if t == nil continue end
+      var data = {"Temperature": real(t[1])}
+      var h = re.search('"Humidity":([0-9.]+)', part)
+      var c = re.search('"CO2":([0-9.]+)', part)
+      if h != nil data["Humidity"] = real(h[1]) end
+      if c != nil data["CO2"] = real(c[1]) end
+      for r : self.rooms
+        if r["module"] != mod continue end
+        r["device"] = device
+        r["id"] = kind[1] == "NAMain" ? nil : id[1]
+        r["seen"] = true
+        self.reading(r, data, kind[1] == "NAModule1")
       end
     end
     # Out of reach, or not on the account: no page rather than an old one.
@@ -257,7 +284,7 @@ class Netatmo
     var n = size(vals)
     var co2 = r["kind"] == "co2"
     var bottom = height() - 1
-    var span = bottom > 7 ? 9 : 7     # rows 6-15 under the temperature, or the whole 8 rows
+    var span = 7                      # rows 8-15 under the temperature, or the whole 8 rows
     var w = width() - self.x0
     var rows = []
     var edge = []
@@ -347,7 +374,17 @@ class Netatmo
     r["out"] = out
   end
 
+  # Within the quiet hours from the settings, across midnight too; never before the clock knows the time.
+  def quiet()
+    if !store.get("quiet") || epoch_ms() < 0 return false end
+    var h = hour()
+    var f = int(store.get("qfrom"))
+    var t = int(store.get("qto"))
+    return f > t ? (h >= f || h < t) : (h >= f && h < t)
+  end
+
   def should_show()
+    if self.quiet() return false end
     self.live = []
     for r : self.rooms
       if r["temp"] != nil self.live.push(r) end
@@ -516,7 +553,7 @@ class Netatmo
   # 16 rows high: temperature and humidity, under them CO2 giving way to the curve as q goes from
   # 0 to 1, or the curve alone without CO2.
   def paint(r, dy, q)
-    var top = (self.chart ? 0 : 2) + dy
+    var top = 2 + dy                         # two rows above the text, beside the middle of the icon
     var x0 = self.x0
     var t = r["temp"] == nil ? "--" : r["temp"]      # gone while on screen
     var x = x0 + text(x0, top + 5, t, r["tint"])

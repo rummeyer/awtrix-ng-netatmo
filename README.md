@@ -105,6 +105,7 @@ Behind the same gear button:
 | Update every | 10 min | The station sends to Netatmo every ten minutes. |
 | Temperature comfortable from / to | 18 / 24 °C | Below is blue, above red. |
 | CO2 comfortable from / to | 800 / 1500 ppm | Below is green, inside yellow, above red, as on the LaMetric. |
+| Quiet hours | off, 23 to 8 h | Left out of the rotation between these hours, across midnight too. The readings keep coming, so the pages are up to date in the morning. |
 | Notify when uncomfortable | `off` | `silent`, with a `sound`, or the `voice` saying so, when a room turns too cold, too warm or too stuffy. |
 
 **Rooms** are separated by commas. Each is the module's name as in the
