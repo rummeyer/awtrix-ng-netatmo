@@ -390,8 +390,11 @@ class Netatmo
         return
       end
     end
-    # Round again from the first room when the app is kept on longer than they take.
-    var el = (now_ms() - self.t0) % self.duration()
+    # The rotation keeps the app a moment past its time: the last page stays rather than the first
+    # coming back for it. Kept on longer, as the only app, it rounds again from the first room.
+    var d = self.duration()
+    var el = (now_ms() - self.t0) % (d + 3000)
+    if el >= d el = d - 1 end
     var i = 0
     var start = 0
     while i < n - 1 && el >= start + self.page(self.live[i])
