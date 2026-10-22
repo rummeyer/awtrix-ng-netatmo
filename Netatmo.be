@@ -397,10 +397,10 @@ class Netatmo
         self.show(self.live[i], 0, ph)
       end
     end
-    # A red dot in the lower right corner while the station is not heard from; 2×2 16 rows high.
+    # A red dot in the upper right corner while the station is not heard from; 2×2 16 rows high.
     if self.err
       var s = height() > 8 ? 2 : 1
-      rect_fill(width() - s, height() - s, s, s, 0xFF0000)
+      rect_fill(width() - s, 0, s, s, 0xFF0000)
     end
   end
 

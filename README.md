@@ -144,7 +144,7 @@ of the icon. Temperatures follow the clock's °C/°F setting.
 
 **Until the station first answers**, as just after a restart, the app sits
 out its turn. When Netatmo is not reached, or the token is refused, the
-pages keep the last readings and a **red dot** in the lower right corner
+pages keep the last readings and a **red dot** in the upper right corner
 says so, until an answer comes again; the log has the details.
 
 **The curve** is the room's CO2 of the last 24 hours, an hour per few
