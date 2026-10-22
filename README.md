@@ -115,10 +115,8 @@ Behind the same gear button:
 | Short | 5 s | How long a page stays; `medium` is twice as long, `long` three times. |
 | 24-hour curve | on | The last 24 hours along the bottom. Off puts the values in the middle. |
 | Update every | 10 min | The station sends to Netatmo every ten minutes. |
-| Temperature comfortable from / to | 18 / 24 °C | Below is blue, above red. |
-| CO2 comfortable from / to | 800 / 1500 ppm | Below is green, inside yellow, above red, as on the LaMetric. |
+| CO2 comfortable from / to | 800 / 1500 ppm | The curve below is green, inside yellow, above red, as on the LaMetric. |
 | Quiet hours | off, 23 to 8 h | Left out of the rotation between these hours, across midnight too. The readings keep coming, so the pages are up to date in the morning. |
-| Notify when uncomfortable | `off` | `silent`, with a `sound`, or the `voice` saying so, when a room turns too cold, too warm or too stuffy. |
 
 **Rooms** are separated by commas. Each is the module's name as in the
 Netatmo app, then optionally `:icon` and `short`, `medium` or `long`:
@@ -134,13 +132,15 @@ one filling the 16×16 square, an animated one at its own 8×8 in the middle
 of it. On a TC001 the number names an icon installed on the clock, shown
 at 8×8 (see Installing). Any other name is an icon on the clock, such as one installed from
 the [AWTRIX Hub](https://awtrix.de/icons). A room without one, or whose icon
-cannot be found, gets a thermometer.
+cannot be found, gets a thermometer. While an icon is still on its way, as
+on the first round after a restart, the square stays empty for up to 5 s
+rather than showing the thermometer first.
 
 ## What it shows
 
-**Temperature** in the colour of its comfort zone, **humidity** in blue
-beside it, **CO2** under them in green, yellow or red. Temperatures follow
-the clock's °C/°F setting.
+**Temperature** and **humidity** beside each other, **CO2** under them; the
+values white, their units grey. On the TC001 they take turns, centred right
+of the icon. Temperatures follow the clock's °C/°F setting.
 
 **Until the station first answers**, as just after a restart, the app sits
 out its turn. When Netatmo is not reached, or the token is refused, the
@@ -149,16 +149,14 @@ says so, until an answer comes again; the log has the details.
 
 **The curve** is the room's CO2 of the last 24 hours, an hour per few
 columns, with the latest at the right, in the green, yellow and red of the
-CO2 value. It takes the CO2 value's place for the second half of the page,
+CO2 level. It takes the CO2 value's place for the second half of the page,
 filling everything under the temperature. It is drawn the way the Weather script by Hank_the_Tank
 draws its forecast: a bright edge, the area under it dim. Netatmo keeps the
 hourly values, so the curve is full from the first minute.
 
 **An outdoor module** has no CO2, so its page shows temperature and humidity
 only, and its curve, shown for the whole page, is the temperature instead, in the Weather script's temperature colours from violet
-in frost through blue, green and yellow to red in heat. The rooms' comfort
-zone means nothing outside: its temperature is blue below 0 °C and red above
-30 °C, and it never notifies.
+in frost through blue, green and yellow to red in heat.
 
 A room out of reach of the station, or named differently from its module,
 gets no page. The station's module names are published to the other scripts

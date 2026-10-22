@@ -1,17 +1,14 @@
 # @name    Netatmo
 # @desc    Netatmo Weather Station, a page per room: temperature, humidity, CO2 and the last 24 hours
 # @author  Oliver Rummeyer
-# @version 6.0
+# @version 6.1
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
 # @config  rooms   text   "Rooms"          default="Wohnzimmer:8132, Arbeitszimmer:8135, Kinderzimmer:39884, Schlafzimmer:8136, Balkon:36855" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
 # @config  seconds number "Short"          default=5 min=2 max=30 unit=s help="How long a short page stays; medium is twice, long three times"
 # @config  chart   bool   "24-hour curve" default=true help="CO2 of the last 24 hours along the bottom; temperature where there is no CO2"
 # @config  every   number "Update every"   default=10 min=5 max=60 unit=min
-# @config  tlow    number "Comfortable from" default=18 min=-30 max=40 unit=°C group="Temperature"
-# @config  thigh   number "Comfortable to" default=24 min=-30 max=40 unit=°C group="Temperature"
 # @config  clow    number "Comfortable from" default=800 min=400 max=5000 step=50 unit=ppm group="CO2"
 # @config  chigh   number "Comfortable to" default=1500 min=400 max=5000 step=50 unit=ppm group="CO2"
-# @config  alert   select "Notify when uncomfortable" default=off options=off,silent,sound,voice
 # @config  quiet   bool   "Quiet hours"    default=false group="Quiet hours" help="Left out of the rotation between these hours; the readings keep coming"
 # @config  qfrom   number "From"           default=23 min=0 max=23 unit=h group="Quiet hours"
 # @config  qto     number "To"             default=8 min=0 max=23 unit=h group="Quiet hours"
@@ -34,10 +31,12 @@ import json
 # few methods, a room an object rather than a map, a curve a number a column.
 
 # A room: what the settings say, the readings as they come, and the curve, a number per column with
-# its top row in the bits above 24 and its colour below; co2u is the CO2 with its unit. parts are what it shows one after the
-# other 8 rows high, 0 temperature, 1 humidity, 2 CO2 and 3 the curve; page is how long it stays.
+# its top row in the bits above 24 and its colour below. temp, hum and co2u are pieces for text(),
+# the value white and its unit grey; co2 is the number alone. parts are what it shows one after the
+# other 8 rows high, 0 temperature, 1 humidity, 2 CO2 and 3 the curve; page is how long it stays;
+# wait since when its icon has been on its way, 0 once it has come.
 class Room
-  var module, icon, url, ms, temp, hum, co2, co2u, co2tint, tint, kind, chart, chartAt, out, seen, device, id, parts, page
+  var module, icon, url, ms, temp, hum, co2, co2u, kind, chart, chartAt, seen, device, id, parts, page, wait
 end
 
 class Netatmo
@@ -78,7 +77,8 @@ class Netatmo
     else
       self.thermo = [[0x18, 0x18, 0x18, 0x18, 0x18, 0x3C, 0x3C, 0x18], [W, W, W, W, R, R, R, R]]
     end
-    # Where the text starts: past the 16×16 icon, or the 8×8 one on a display 8 rows high.
+    # Where the text starts: past the 16×16 icon and a gap, or past the 8×8 one and a dark column on
+    # a display 8 rows high, where it is centred in the columns left.
     self.x0 = height() > 8 ? 18 : 9
     var times = {"short": 1, "medium": 2, "long": 3}
     var short = int(store.get("seconds")) * 1000
@@ -97,8 +97,6 @@ class Netatmo
           r.url = "https://developer.lametric.com/content/apps/icon_thumbs/" + r.icon
         end
         r.ms = short * (m[4] == nil ? 1 : times[m[4]])
-        r.co2tint = self.fg
-        r.tint = self.fg
         r.parts = [0]
         r.page = r.ms
         self.rooms.push(r)
@@ -187,7 +185,7 @@ class Netatmo
   end
 
   # getstationsdata: every module of every station, the rooms' readings taken out of it, with their
-  # texts, colours and comfort worked out here, never in draw().
+  # texts worked out here, never in draw().
   def on_stations(body, status)
     self.busy = false
     # No answer, or the token refused: the readings stay as they were, a red dot says so, and it
@@ -201,10 +199,6 @@ class Netatmo
     self.err = false
     for r : self.rooms r.seen = false end
     var names = []
-    var tlow = store.get("tlow")
-    var thigh = store.get("thigh")
-    var chigh = store.get("chigh")
-    var how = store.get("alert")
     # Taken out of the answer's text module by module rather than with json.load(), whose whole
     # tree a clock with little memory, as the TC001, cannot spare. A module's part runs from its
     # "_id" to the next one's: a station first, then its modules.
@@ -235,26 +229,13 @@ class Netatmo
         r.device = device
         r.id = kind[1] == "NAMain" ? nil : id[1]
         r.seen = true
-        var out = false
-        if outdoor
-          # The rooms' comfort zone means nothing outside: frost is blue, heat red.
-          r.tint = t < 0 ? 0x2E9BFF : (t > 30 ? 0xFF3020 : self.fg)
-        else
-          out = t < tlow || t > thigh
-          r.tint = t < tlow ? 0x2E9BFF : (t > thigh ? 0xFF3020 : self.fg)
-        end
-        var why = string.format("%.1f°", t)
-        r.temp = string.format("%.1f°", settings.get("useCelsius") == false ? t * 1.8 + 32 : t)
-        r.hum = h == nil ? nil : str(round(h)) + "%"
+        var G = 0x909090
+        r.temp = [[string.format("%.1f", settings.get("useCelsius") == false ? t * 1.8 + 32 : t), self.fg], ["°", G]]
+        r.hum = h == nil ? nil : [[str(round(h)), self.fg], ["%", G]]
         r.co2 = nil
         if c != nil && !outdoor
-          r.co2tint = self.colour(c, true)
           r.co2 = str(round(c))
-          r.co2u = r.co2 + "ppm"
-          if c > chigh
-            out = true
-            why = str(round(c)) + " ppm CO2"
-          end
+          r.co2u = [[r.co2, self.fg], ["ppm", G]]
         end
         # The curve of what the page shows: CO2, or the temperature without it; a new one when that
         # changes.
@@ -264,18 +245,6 @@ class Netatmo
           r.chart = nil
           r.chartAt = nil
         end
-        # Only a turn for the worse is news; the first reading after a start is not.
-        if r.out == false && out && how != "off"
-          var spec = {"text": r.module + " " + why, "textColor": 0xFF3020}
-          var tune = {"rtttl": "alert:d=8,o=6,b=160:e,c,e,c"}
-          if how == "sound"
-            spec["sound"] = tune
-          elif how == "voice"
-            spec["sound"] = [{"speech": r.module + " is uncomfortable: " + why}, tune]
-          end
-          notify(spec)
-        end
-        r.out = out
       end
     end
     # Out of reach, or not on the account: no page rather than an old one.
@@ -439,7 +408,15 @@ class Netatmo
   # thermometer without one, or when it is missing. The clock fills a square as high as the display
   # with a still one from an address, and plays an animated one at its own size in the middle of it.
   def show(r, dy, ph)
-    if !(r.url != nil && icon(r.url, 0, dy)) && !(r.icon != nil && icon(r.icon, 0, dy))
+    var ok = (r.url != nil && icon(r.url, 0, dy)) || (r.icon != nil && icon(r.icon, 0, dy))
+    # An icon not drawn may still be on its way, as on the first round after a start: an empty
+    # square for up to 5 s rather than the thermometer flashing up before it.
+    if ok
+      r.wait = 0
+    elif r.icon != nil && r.wait == nil
+      r.wait = now_ms()
+    end
+    if !ok && (r.icon == nil || now_ms() - r.wait > 5000)
       var rows = self.thermo[0]
       var colours = self.thermo[1]
       var n = size(rows)
@@ -456,7 +433,7 @@ class Netatmo
     end
     font("small")
     var x0 = self.x0
-    var t = r.temp == nil ? "--" : r.temp      # gone while on screen
+    var t = r.temp == nil ? [["--", self.fg]] : r.temp      # gone while on screen
     var ch = r.chart
     if !self.chart ch = nil end
     if height() > 8
@@ -468,12 +445,12 @@ class Netatmo
       if ch == nil q = 0.0 end
       if r.co2 == nil q = 1.0 end
       var top = 2 + dy                         # two rows above the text, beside the middle of the icon
-      var x = x0 + text(x0, top + 5, t, r.tint)
-      if r.hum != nil text(x + 3, top + 5, r.hum, 0x31B8DB) end
+      var x = x0 + text(x0, top + 5, t)
+      if r.hum != nil text(x + 3, top + 5, r.hum) end
       if r.co2 != nil && q < 0.5
         var down = int(q * 22)
-        x = x0 + text(x0, top + 11 + down, r.co2, r.co2tint)
-        text(x + 2, top + 11 + down, "ppm", r.co2tint)
+        x = x0 + text(x0, top + 11 + down, r.co2, self.fg)
+        text(x + 2, top + 11 + down, "ppm", 0x909090)
       end
       if ch != nil && q >= 0.5 self.curve(ch, dy + int((1 - q) * 20)) end
       return
@@ -496,15 +473,12 @@ class Netatmo
       if ch != nil self.curve(ch, dy + off) end
       return
     end
-    var c = r.tint
     if what == 1
       t = r.hum
-      c = 0x31B8DB
     elif what == 2
-      t = text_width(r.co2u) <= width() - x0 ? r.co2u : r.co2
-      c = r.co2tint
+      t = text_ink_width(r.co2u) <= width() - x0 ? r.co2u : [[r.co2, self.fg]]
     end
-    text(x0 + max(0, (width() - x0 - text_width(t) + 1) / 2), dy + off + 6, t, c)
+    text(x0 + max(0, (width() - x0 - text_ink_width(t)) / 2), dy + off + 6, t)
   end
 
   # The last 24 hours, dy rows lower: a bright edge, the area under it dim.
