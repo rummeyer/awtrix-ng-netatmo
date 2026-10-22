@@ -46,11 +46,12 @@ Secret** open.
 press **Send to AWTRIX**. The clock's web UI then offers each new version as
 an update. Or by hand: in the clock's web UI, opened by its IP address or local
 name, go to **Scripts**, create a script named `Netatmo`, paste in
-[`Netatmo.be`](Netatmo.be) and save. Or from a computer on the same network:
+[`Netatmo.be`](Netatmo.be) and save. Or from a computer on the same network,
+with the comments left out, so the clock has more memory to spare:
 
 ```sh
-curl -X PUT "http://<awtrix-ip>/api/v1/apps/script/Netatmo" \
-  -H "Content-Type: text/plain" --data-binary @Netatmo.be
+sed -e '/^# @/b' -e '/^[[:space:]]*#/d' Netatmo.be | curl -X PUT "http://<awtrix-ip>/api/v1/apps/script/Netatmo" \
+  -H "Content-Type: text/plain" --data-binary @-
 ```
 
 **Signing in.** On the **Apps** tab, press the gear button on the `Netatmo`
@@ -65,10 +66,11 @@ else.
 with a token instead. [Netatmo on the Hub](https://awtrix.de/script/LVDogUoTjVxc)
 sends a TC001 a version of the script without its `@oauth` line, which the
 TC001 cannot use and which would mark the app as not fitting the clock. By
-hand, leave the line out yourself:
+hand, leave the line out yourself, and the comments too: with them the script
+is more than a TC001 takes.
 
 ```sh
-sed '/^# @oauth /d' Netatmo.be | curl -X PUT "http://<tc001-ip>/api/v1/apps/script/Netatmo" \
+sed -e '/^# @oauth /d' -e '/^# @/b' -e '/^[[:space:]]*#/d' Netatmo.be | curl -X PUT "http://<tc001-ip>/api/v1/apps/script/Netatmo" \
   -H "Content-Type: text/plain" --data-binary @-
 ```
 
