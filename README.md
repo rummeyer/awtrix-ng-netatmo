@@ -139,16 +139,18 @@ Keller:box, Balkon:plant-watering
 A room the station does not have gets no page, so the defaults can name
 more rooms than a home has; the log says which ones were not found.
 
-**Icons** are icons on the clock, by name, or numbers from the
-[LaMetric icon gallery](https://developer.lametric.com/icons). A name is an
-icon such as one from the [AWTRIX Hub](https://awtrix.de/icons), as the
-defaults: an 8×8 one stands in the middle of the TC002's 16×16 square. A
-number the clock draws from
-the clock draws them from
+**Icons** are told apart by what follows the colon. Digits alone are a
+number from the [LaMetric icon gallery](https://developer.lametric.com/icons):
+the TC002 draws it from
 `https://developer.lametric.com/content/apps/icon_thumbs/<number>`, a still
 one filling the 16×16 square, an animated one at its own 8×8 in the middle
-of it. On a TC001 the number names an icon installed on the clock, shown
-at 8×8 (see Installing). A room without one, or whose icon
+of it; on a TC001 the number names an icon installed on the clock, shown at
+8×8 (see Installing). Anything else is the name of an icon on the clock, as
+its **Icons** tab lists it, such as one from the
+[AWTRIX Hub](https://awtrix.de/icons) like the defaults. Both clocks draw it
+from there, so it has to be installed on each: an 8×8 one stands in the
+middle of the TC002's 16×16 square. A Hub icon whose name is only digits is
+taken for a LaMetric number. A room without an icon, or whose icon
 cannot be found, gets a thermometer. While an icon is still on its way, as
 on the first round after a restart, the square stays empty for up to 5 s
 rather than showing the thermometer first.
