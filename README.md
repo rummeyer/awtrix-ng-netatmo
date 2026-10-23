@@ -167,8 +167,8 @@ Wohnzimmer:76112, Arbeitszimmer:27717, Kinderzimmer:41428, Schlafzimmer:30188, B
 ## What it shows
 
 **Temperature** and **humidity** beside each other, **CO2** under them; the
-values white, their units grey. On the TC001 they take turns, centred right
-of the icon. Temperatures follow the clock's °C/°F setting.
+values white, CO2 green, yellow or red as the curve, their units grey. On
+the TC001 they take turns, centred right of the icon. Temperatures follow the clock's °C/°F setting.
 
 **Until the station first answers**, as just after a restart, the app sits
 out its turn. When Netatmo is not reached, or the token is refused, the

@@ -33,7 +33,7 @@ import json
 
 # A room: what the settings say, the readings as they come, and the curve, a number per column with
 # its top row in the bits above 24 and its colour below. temp, hum and co2u are pieces for text(),
-# the value white and its unit grey; co2 is the number alone. parts are what it shows one after the
+# the value white, CO2 in its level's colour as the curve, and the unit grey; co2 is the number alone. parts are what it shows one after the
 # other 8 rows high, 0 temperature, 1 humidity, 2 CO2 and 3 the curve; page is how long it stays;
 # wait since when its icon has been on its way, 0 once it has come.
 class Room
@@ -236,7 +236,7 @@ class Netatmo
         r.co2 = nil
         if c != nil && !outdoor
           r.co2 = str(round(c))
-          r.co2u = [[r.co2, self.fg], ["ppm", G]]
+          r.co2u = [[r.co2, self.colour(c, true)], ["ppm", G]]
         end
         # The curve of what the page shows: CO2, or the temperature without it; a new one when that
         # changes.
@@ -453,7 +453,7 @@ class Netatmo
       if r.hum != nil text(x + 3, top + 5, r.hum) end
       if r.co2 != nil && q < 0.5
         var down = int(q * 22)
-        x = x0 + text(x0, top + 11 + down, r.co2, self.fg)
+        x = x0 + text(x0, top + 11 + down, r.co2, r.co2u[0][1])
         text(x + 2, top + 11 + down, "ppm", 0x909090)
       end
       if ch != nil && q >= 0.5 self.curve(ch, dy + int((1 - q) * 20)) end
@@ -480,7 +480,7 @@ class Netatmo
     if what == 1
       t = r.hum
     elif what == 2
-      t = text_ink_width(r.co2u) <= width() - x0 ? r.co2u : [[r.co2, self.fg]]
+      t = text_ink_width(r.co2u) <= width() - x0 ? r.co2u : [r.co2u[0]]
     end
     text(x0 + max(0, (width() - x0 - text_ink_width(t)) / 2), dy + off + 6, t)
   end
