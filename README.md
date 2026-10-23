@@ -155,6 +155,12 @@ cannot be found, gets a thermometer. While an icon is still on its way, as
 on the first round after a restart, the square stays empty for up to 5 s
 rather than showing the thermometer first.
 
+Rooms with LaMetric icons instead, as on the author's clocks:
+
+```
+Wohnzimmer:76112, Arbeitszimmer:27717, Kinderzimmer:41428, Schlafzimmer:30188, Balkon:18152
+```
+
 ## What it shows
 
 **Temperature** and **humidity** beside each other, **CO2** under them; the
