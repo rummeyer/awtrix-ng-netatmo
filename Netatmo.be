@@ -3,8 +3,8 @@
 # @author  Oliver Rummeyer
 # @version 6.2
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
-# @icons   living-on, stove, meal, pctvon, bear, bed, showerflow, door, box, plant-watering
-# @config  rooms   text   "Rooms"          default="Wohnzimmer:living-on, Küche:stove, Esszimmer:meal, Arbeitszimmer:pctvon, Kinderzimmer:bear, Schlafzimmer:bed, Badezimmer:showerflow, Flur:door, Keller:box, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
+# @icons   tv-on-animation, stove, coffee, pctvon, baby-ani, bed, shower, door, plant-watering, sofa, bathtub
+# @config  rooms   text   "Rooms"          default="Wohnzimmer:tv-on-animation, Küche:stove, Esszimmer:coffee, Arbeitszimmer:pctvon, Kinderzimmer:baby-ani, Schlafzimmer:bed, Badezimmer:shower, Flur:door, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
 # @config  seconds number "Short"          default=5 min=2 max=30 unit=s help="How long a short page stays; medium is twice, long three times"
 # @config  chart   bool   "24-hour curve" default=true help="CO2 of the last 24 hours along the bottom; temperature where there is no CO2"
 # @config  every   number "Update every"   default=10 min=5 max=60 unit=min

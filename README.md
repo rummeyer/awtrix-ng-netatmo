@@ -131,13 +131,16 @@ Behind the same gear button:
 Netatmo app, then optionally `:icon` and `short`, `medium` or `long`:
 
 ```
-Wohnzimmer:living-on, Küche:stove, Esszimmer:meal, Arbeitszimmer:pctvon,
-Kinderzimmer:bear, Schlafzimmer:bed, Badezimmer:showerflow, Flur:door,
-Keller:box, Balkon:plant-watering
+Wohnzimmer:tv-on-animation, Küche:stove, Esszimmer:coffee, Arbeitszimmer:pctvon,
+Kinderzimmer:baby-ani, Schlafzimmer:bed, Badezimmer:shower, Flur:door,
+Balkon:plant-watering
 ```
 
 A room the station does not have gets no page, so the defaults can name
-more rooms than a home has; the log says which ones were not found.
+more rooms than a home has; the log says which ones were not found. The
+script also brings `sofa` and `bathtub` from the Hub, to use in their
+place. An icon's name is the last part of its address on the Hub, as
+`tv-on-animation` in `awtrix.de/icons/tv-on-animation`.
 
 **Icons** are told apart by what follows the colon. Digits alone are a
 number from the [LaMetric icon gallery](https://developer.lametric.com/icons):
