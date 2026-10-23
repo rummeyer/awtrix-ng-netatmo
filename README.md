@@ -24,8 +24,8 @@ come up from the bottom:
 ```
 
 The clock signs in to Netatmo itself. There is no bridge or server: the
-clock asks `api.netatmo.com` for the readings and LaMetric's icon gallery
-for the icons, nothing to install first.
+clock asks `api.netatmo.com` for the readings, and the icons of the
+default rooms come along with the script from the AWTRIX Hub.
 
 ## Installing
 
@@ -85,8 +85,15 @@ the log says the token was refused: generate a new one. The secret and the
 token are readable to anyone who can open the clock's web UI or a config
 backup.
 
-The TC001 cannot draw pictures from a web address, so its icons have to be
-on the clock, named by their number. [`install-icons.py`](install-icons.py)
+The icons of the default rooms are on the AWTRIX Hub, and the clock installs
+them with the script when it comes from the Hub, on a TC001 too. That needs
+the Hub connection key under **System → AWTRIX Hub** in the clock's web UI
+(made in [your Hub account](https://awtrix.de/account/settings)); without it,
+or with the script installed by hand, a room gets a thermometer until its
+icon is installed from the [Hub's icons](https://awtrix.de/icons).
+
+The TC001 cannot draw pictures from a web address, so LaMetric icons, given
+by their number, have to be on the clock. [`install-icons.py`](install-icons.py)
 puts them there: it reads the rooms from the app's settings and installs
 every icon number the clock does not have yet, a still PNG turned into a GIF.
 It needs Python 3 and nothing else, leaves installed icons alone and skips a
@@ -124,16 +131,24 @@ Behind the same gear button:
 Netatmo app, then optionally `:icon` and `short`, `medium` or `long`:
 
 ```
-Wohnzimmer:8132, Arbeitszimmer:8135, Kinderzimmer:39884, Schlafzimmer:8136, Balkon:36855
+Wohnzimmer:living-on, Küche:stove, Esszimmer:meal, Arbeitszimmer:pctvon,
+Kinderzimmer:bear, Schlafzimmer:bed, Badezimmer:showerflow, Flur:door,
+Keller:box, Balkon:plant-watering
 ```
 
-**Icons** are numbers from the [LaMetric icon gallery](https://developer.lametric.com/icons):
+A room the station does not have gets no page, so the defaults can name
+more rooms than a home has; the log says which ones were not found.
+
+**Icons** are icons on the clock, by name, or numbers from the
+[LaMetric icon gallery](https://developer.lametric.com/icons). A name is an
+icon such as one from the [AWTRIX Hub](https://awtrix.de/icons), as the
+defaults: an 8×8 one stands in the middle of the TC002's 16×16 square. A
+number the clock draws from
 the clock draws them from
 `https://developer.lametric.com/content/apps/icon_thumbs/<number>`, a still
 one filling the 16×16 square, an animated one at its own 8×8 in the middle
 of it. On a TC001 the number names an icon installed on the clock, shown
-at 8×8 (see Installing). Any other name is an icon on the clock, such as one installed from
-the [AWTRIX Hub](https://awtrix.de/icons). A room without one, or whose icon
+at 8×8 (see Installing). A room without one, or whose icon
 cannot be found, gets a thermometer. While an icon is still on its way, as
 on the first round after a restart, the square stays empty for up to 5 s
 rather than showing the thermometer first.

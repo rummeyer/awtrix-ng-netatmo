@@ -1,9 +1,10 @@
 # @name    Netatmo
 # @desc    Netatmo Weather Station, a page per room: temperature, humidity, CO2 and the last 24 hours
 # @author  Oliver Rummeyer
-# @version 6.1
+# @version 6.2
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
-# @config  rooms   text   "Rooms"          default="Wohnzimmer:8132, Arbeitszimmer:8135, Kinderzimmer:39884, Schlafzimmer:8136, Balkon:36855" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
+# @icons   living-on, stove, meal, pctvon, bear, bed, showerflow, door, box, plant-watering
+# @config  rooms   text   "Rooms"          default="Wohnzimmer:living-on, Küche:stove, Esszimmer:meal, Arbeitszimmer:pctvon, Kinderzimmer:bear, Schlafzimmer:bed, Badezimmer:showerflow, Flur:door, Keller:box, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
 # @config  seconds number "Short"          default=5 min=2 max=30 unit=s help="How long a short page stays; medium is twice, long three times"
 # @config  chart   bool   "24-hour curve" default=true help="CO2 of the last 24 hours along the bottom; temperature where there is no CO2"
 # @config  every   number "Update every"   default=10 min=5 max=60 unit=min
@@ -407,8 +408,11 @@ class Netatmo
   # One room, dy rows down, ph ms into its page. Its icon, from LaMetric or the clock; the
   # thermometer without one, or when it is missing. The clock fills a square as high as the display
   # with a still one from an address, and plays an animated one at its own size in the middle of it.
+  # One on the clock, as the Hub's 8×8 icons the defaults name, it draws at its own size from the
+  # corner: in the middle of the TC002's 16×16 square, then.
   def show(r, dy, ph)
-    var ok = (r.url != nil && icon(r.url, 0, dy)) || (r.icon != nil && icon(r.icon, 0, dy))
+    var o = height() > 8 ? 4 : 0
+    var ok = (r.url != nil && icon(r.url, 0, dy)) || (r.icon != nil && icon(r.icon, o, dy + o))
     # An icon not drawn may still be on its way, as on the first round after a start: an empty
     # square for up to 5 s rather than the thermometer flashing up before it.
     if ok
