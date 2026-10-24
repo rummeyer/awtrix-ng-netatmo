@@ -1,7 +1,7 @@
 # @name    Netatmo
 # @desc    Netatmo Weather Station, a page per room: temperature, humidity, CO2 and the last 24 hours
 # @author  Oliver Rummeyer
-# @version 6.2
+# @version 6.3
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
 # @icons   tv-on-animation, stove, coffee, pctvon, baby-ani, bed, shower, door, plant-watering, sofa, bathtub
 # @config  rooms   text   "Rooms"          default="Wohnzimmer:tv-on-animation, Küche:stove, Esszimmer:coffee, Arbeitszimmer:pctvon, Kinderzimmer:baby-ani, Schlafzimmer:bed, Badezimmer:shower, Flur:door, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
@@ -480,9 +480,30 @@ class Netatmo
     if what == 1
       t = r.hum
     elif what == 2
-      t = text_ink_width(r.co2u) <= width() - x0 ? r.co2u : [r.co2u[0]]
+      t = self.inkw(r.co2u) <= width() - x0 ? r.co2u : [r.co2u[0]]
     end
-    text(x0 + max(0, (width() - x0 - text_ink_width(t)) / 2), dy + off + 6, t)
+    text(x0 + max(0, (width() - x0 - self.inkw(t)) / 2), dy + off + 6, t)
+  end
+
+  # The pieces' width in the small font, a column between characters: the clock's widths for
+  # 0-9 - % . and °, the letters of ppm by text_ink_width(). That alone answers more than text()
+  # draws, which put the values left of the middle.
+  def inkw(pc)
+    var w = -1
+    for p : pc
+      var s = p[0]
+      var i = 0
+      while i < size(s)
+        var c = s[i]
+        var k = string.find("0123456789-%.", c)
+        if c == "\xc2" w += 3 i += 1              # ° in UTF-8, two bytes, 2 wide
+        elif k >= 0 w += k < 12 ? 4 : 2
+        else w += text_ink_width(c) + 1
+        end
+        i += 1
+      end
+    end
+    return w
   end
 
   # The last 24 hours, dy rows lower: a bright edge, the area under it dim.
