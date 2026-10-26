@@ -1,7 +1,7 @@
 # @name    Netatmo
 # @desc    Netatmo Weather Station, a page per room: temperature, humidity, CO2 and the last 24 hours
 # @author  Oliver Rummeyer
-# @version 6.3
+# @version 6.4
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
 # @icons   tv-on-animation, stove, coffee, pctvon, baby-ani, bed, shower, door, plant-watering, sofa, bathtub
 # @config  rooms   text   "Rooms"          default="Wohnzimmer:tv-on-animation, Küche:stove, Esszimmer:coffee, Arbeitszimmer:pctvon, Kinderzimmer:baby-ani, Schlafzimmer:bed, Badezimmer:shower, Flur:door, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
@@ -42,6 +42,7 @@ end
 
 class Netatmo
   var rooms, live, total, fg, t0, signed, ticks, busy, chart, missing, st, thermo, x0, err, oa, access, expires, failed, renewing
+  var answered     # the station has answered since the start: a room without a page is not on it
 
   def init()
     self.fg = settings.get("textColor")
@@ -57,6 +58,7 @@ class Netatmo
     self.busy = false
     self.missing = ""
     self.err = false
+    self.answered = false
     # The clock's sign-in, where it has one
     try
       import oauth
@@ -198,6 +200,7 @@ class Netatmo
     end
     if string.find(body, '"devices"') < 0 return end
     self.err = false
+    self.answered = true
     for r : self.rooms r.seen = false end
     var names = []
     # Taken out of the answer's text module by module rather than with json.load(), whose whole
@@ -351,13 +354,13 @@ class Netatmo
         self.live.push(r)
       end
     end
-    # Not signed in, it says so; until the station's first answer, as just after a restart, it
-    # leaves the rotation to the others.
-    return !self.signed || size(self.live) > 0
+    # Not signed in, or no room on the station, it says so; until the station's first answer, as
+    # just after a restart, it leaves the rotation to the others.
+    return !self.signed || size(self.live) > 0 || self.answered
   end
 
   def duration()
-    return self.signed ? self.total : 0
+    return size(self.live) > 0 ? self.total : 0
   end
 
   # Brought up straight, as by the API or the menu, the rotation has not asked should_show().
@@ -376,6 +379,12 @@ class Netatmo
     # Brought up without the rotation asking should_show() or on_show(): pick the rooms now.
     if size(self.live) == 0 self.on_show() end
     var n = size(self.live)
+    # The station answered, and none of its modules is one of the rooms: their names are in the log.
+    if n == 0 && self.answered
+      font("small")
+      scroll_text("Netatmo: no room found, check Rooms in the app settings", self.fg)
+      return
+    end
     if n > 0
       # The rotation keeps the app a moment past its time: the last page stays rather than the first
       # coming back for it. Kept on longer, as the only app, it rounds again from the first room.
