@@ -1,7 +1,7 @@
 # @name    Netatmo
 # @desc    Netatmo Weather Station, a page per room: temperature, humidity, CO2 and the last 24 hours
 # @author  Oliver Rummeyer
-# @version 6.5
+# @version 6.6
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
 # @icons   tv-on-animation, stove, coffee, pctvon, baby-ani, bed, shower, door, plant-watering, sofa, bathtub
 # @config  rooms   text   "Rooms"          default="Wohnzimmer:tv-on-animation, Küche:stove, Esszimmer:coffee, Arbeitszimmer:pctvon, Kinderzimmer:baby-ani, Schlafzimmer:bed, Badezimmer:shower, Flur:door, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
@@ -44,6 +44,7 @@ class Netatmo
   var rooms, live, total, fg, t0, signed, ticks, busy, chart, missing, st, thermo, x0, err, oa, access, expires, failed, renewing
   var answered     # the station has answered since the start: a room without a page is not on it
   var silent       # rooms are on the station by name, and none has readings: the station is offline
+  var trouble      # since when it has had only a message to show, in ms, or nil
 
   def init()
     self.fg = settings.get("textColor")
@@ -365,8 +366,15 @@ class Netatmo
       end
     end
     # Not signed in, or no room on the station, it says so; until the station's first answer, as
-    # just after a restart, it leaves the rotation to the others.
-    return !self.signed || size(self.live) > 0 || self.answered
+    # just after a restart, it leaves the rotation to the others. Saying so for ten minutes is enough:
+    # then it leaves the rotation to the others until it has rooms to show again.
+    if self.signed && size(self.live) > 0
+      self.trouble = nil
+      return true
+    end
+    if self.signed && !self.answered return false end
+    if self.trouble == nil self.trouble = now_ms() end
+    return now_ms() - self.trouble < 600000
   end
 
   def duration()

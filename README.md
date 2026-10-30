@@ -194,7 +194,9 @@ of the rooms is on the station, the app says so on the display: **Netatmo:
 no room found, check Rooms in the app settings**. If they are there by
 name but none has readings — the station offline, whose modules Netatmo
 lists all the same — it says **Netatmo: the station sends no readings, is
-it online?** instead.
+it online?** instead. Any such message — these two, or one asking to sign
+in — is shown for ten minutes; then the app leaves the rotation to the
+others, and comes back as soon as it has rooms to show again.
 
 Netatmo allows 500 requests an hour; the app makes six for the station and
 one an hour for each room's curve.
