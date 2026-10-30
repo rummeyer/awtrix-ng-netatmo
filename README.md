@@ -191,7 +191,10 @@ gets no page. The station's module names are published to the other scripts
 as `Netatmo.modules`, readable at `http://<awtrix-ip>/api/v1/scripts/shared`,
 which is the quickest way to see what the rooms have to be called. If none
 of the rooms is on the station, the app says so on the display: **Netatmo:
-no room found, check Rooms in the app settings**.
+no room found, check Rooms in the app settings**. If they are there by
+name but none has readings — the station offline, whose modules Netatmo
+lists all the same — it says **Netatmo: the station sends no readings, is
+it online?** instead.
 
 Netatmo allows 500 requests an hour; the app makes six for the station and
 one an hour for each room's curve.

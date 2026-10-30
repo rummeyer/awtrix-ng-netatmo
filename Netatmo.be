@@ -1,7 +1,7 @@
 # @name    Netatmo
 # @desc    Netatmo Weather Station, a page per room: temperature, humidity, CO2 and the last 24 hours
 # @author  Oliver Rummeyer
-# @version 6.4
+# @version 6.5
 # @oauth   authorize=https://api.netatmo.com/oauth2/authorize token=https://api.netatmo.com/oauth2/token api=api.netatmo.com scope="read_station" auth=body
 # @icons   tv-on-animation, stove, coffee, pctvon, baby-ani, bed, shower, door, plant-watering, sofa, bathtub
 # @config  rooms   text   "Rooms"          default="Wohnzimmer:tv-on-animation, Küche:stove, Esszimmer:coffee, Arbeitszimmer:pctvon, Kinderzimmer:baby-ani, Schlafzimmer:bed, Badezimmer:shower, Flur:door, Balkon:plant-watering" help="Module[:icon] [short|medium|long], comma separated; the icon a LaMetric icon number or an icon's name on the clock" maxlen=256
@@ -43,6 +43,7 @@ end
 class Netatmo
   var rooms, live, total, fg, t0, signed, ticks, busy, chart, missing, st, thermo, x0, err, oa, access, expires, failed, renewing
   var answered     # the station has answered since the start: a room without a page is not on it
+  var silent       # rooms are on the station by name, and none has readings: the station is offline
 
   def init()
     self.fg = settings.get("textColor")
@@ -203,6 +204,7 @@ class Netatmo
     self.answered = true
     for r : self.rooms r.seen = false end
     var names = []
+    var named = false             # a room on the station by name, readings or not
     # Taken out of the answer's text module by module rather than with json.load(), whose whole
     # tree a clock with little memory, as the TC001, cannot spare. A module's part runs from its
     # "_id" to the next one's: a station first, then its modules.
@@ -220,6 +222,10 @@ class Netatmo
       var mod = name[1]
       if string.find(mod, "\\") >= 0 mod = json.load('"' + mod + '"') end     # ü and the like
       names.push(mod)
+      for r : self.rooms
+        if r.module == mod named = true end
+      end
+      # No readings: out of reach, or the station offline, whose modules Netatmo lists all the same.
       var m = re.search('"Temperature":(-?[0-9.]+)', part)
       if m == nil continue end
       var t = real(m[1])
@@ -259,8 +265,12 @@ class Netatmo
         gone.push(r.module)
       end
     end
+    # Named on the station, and not one with readings: the station sends none, rather than Rooms
+    # being wrong.
+    self.silent = named && size(gone) == size(self.rooms)
     # Said in the log once, until it changes: what is missing, and what the station has.
-    var missing = size(gone) == 0 ? "" : gone.concat(", ") + " not found; the station has " + names.concat(", ")
+    var missing = size(gone) == 0 ? "" : (self.silent ? "the station sends no readings; is it online?"
+                  : gone.concat(", ") + " not found; the station has " + names.concat(", "))
     if missing != self.missing
       self.missing = missing
       log(missing == "" ? "Netatmo: every room found" : "Netatmo: " + missing)
@@ -380,9 +390,11 @@ class Netatmo
     if size(self.live) == 0 self.on_show() end
     var n = size(self.live)
     # The station answered, and none of its modules is one of the rooms: their names are in the log.
+    # Or the rooms are there by name, without readings: the station is offline.
     if n == 0 && self.answered
       font("small")
-      scroll_text("Netatmo: no room found, check Rooms in the app settings", self.fg)
+      scroll_text(self.silent ? "Netatmo: the station sends no readings, is it online?"
+                              : "Netatmo: no room found, check Rooms in the app settings", self.fg)
       return
     end
     if n > 0
