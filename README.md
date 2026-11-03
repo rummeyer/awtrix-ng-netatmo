@@ -13,6 +13,10 @@ under them, which halfway through the page give way to the CO2 of the last
  └────────┘                       └────────┘▂▄███████████████▄▂
 ```
 
+On a TC002, recorded from its screen:
+
+<img src="docs/netatmo-tc002.gif" alt="The Netatmo app on a TC002: a room's icon, 22.3° and 43 % beside it, 556 ppm in green under them, then the CO2 of the last 24 hours as a curve" width="520">
+
 On the TC001's 32×8 the icon is 8×8, and beside it the temperature,
 humidity, CO2 and the curve take turns, each sliding down for the next to
 come up from the bottom:
